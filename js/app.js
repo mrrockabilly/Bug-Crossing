@@ -1,10 +1,26 @@
 // Enemies our player must avoid
-var Enemy = function() {
-    // Variables applied to each of our instances go here,
-    // we've provided one for you to get started
+var Enemy = function () {
+// Variables applied to each of our instances go here,
+// we've provided one for you to get started
 
-    // The image/sprite for our enemies, this uses
-    // a helper we've provided to easily load images
+// The image/sprite for our enemies, this uses
+// a helper we've provided to easily load images
+
+    this.width = 90;
+    this.height = 80;
+    this.maxSpeed = 200;
+    this.minSpeed = 50;
+    this.xStartOptions = [];
+    this.yStartOptions = [];
+    for (var i = -3; i < 5; i++) {
+        this.xStartOptions.push(i * X_STEP);
+    }
+    for (var j = 1; j < 5; j++) {
+        this.yStartOptions.push(j * Y_STEP);
+    }
+    this.startX();
+    this.startY();
+    this.setSpeed();
     this.sprite = 'images/enemy-bug.png';
 };
 
