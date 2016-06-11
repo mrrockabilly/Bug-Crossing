@@ -68,3 +68,12 @@ document.addEventListener('keyup', function(e) {
 
     player.handleInput(allowedKeys[e.keyCode]);
 });
+
+// Dialog Boxes
+var deathMessage = "Stepped on by a bug. It should have been the other way around;)";
+
+var gameOverMessage = "Game Over: You Lose!";
+
+var openingMessage = "Let's see if you can cross without being crushed by a bug.";
+
+var instructionMessage = "Use your arrow keys to move.";
