@@ -1,1153 +1,403 @@
-/**
- * @const
+/*
+ * GAME CLASS
  */
-var X_LEFT = 0,
-    X_RIGHT = 707,
-    Y_TOP = 0,
-    Y_BOTTOM = 498,
-    X_STEP = 101,
-    Y_STEP = 83,
-    X_CANVAS = 707,
-    Y_CANVAS = 606,
-    DARK_LEVELS = 25;
-
-// Declare Entities
-var gamestate;
-var map;
-var player;
-var allEnemies;
-var allItems;
-var allAttacks;
-var levelStartTime;
-var levelFinishTime;
-
-// General Utility Functions
-/**
- * Function to check if a number falls between two numbers.
- * @param {number} value Number to check if it falls in range.
- * @param {number} min Minimum value.
- * @param {number} max Maximum value.
- * @return {boolean}
- */
-var inRange = function (value, min, max) {
-    if (value <= max && value >= min) {
-        return true;
-    }
-    return false;
-};
-
-/**
- * Function to calculate random integer between two numbers.
- * @param {number} min Minimum value.
- * @param {number} max Maximum value.
- * @return {number}
- */
-var randInt = function (min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min);
-};
-
-/**
- * Function that randomly chooses and returns an element from an array.
- * @param {Array.<?>} array An array
- * @return {?} Random element from array
- */
-var choice = function (array) {
-    return array[Math.floor(Math.random() * array.length)];
-};
-
-/**
- * Function that removes an element from an array by value.  If there are
- * multiple matching elements, the first one will be removed.
- * @param {?} element An element in an array.
- * @param {Array.<?>} array An array.
- */
-var removeElement = function (element, array) {
-    var index = array.indexOf(element);
-    if (index !== -1) {
-        array.splice(index, 1);
-    }
-};
-
-/**
- * Pauses the game and brings up a dialog box.  Resumes the game when the
- * dialog box is closed.
- * @param {string} text Text to display in dialog box. (Can be html).
- */
-var pauseAlert = function (text) {
-    gamestate.paused = true;
-    bootbox.alert(text, function () {
-        gamestate.paused = false
-    });
-};
-
-/**
- * Creates a list of elements that repeat based on the weights assigned to them.
- * This allows for certain elements to have a greater chance of being selected
- * when choosing a random element.
- * @param {Array.<?>} list An array of elements of any type.
- * @param {Array.<number>} weight An array of percentages (as decimals) that
- *     correspond to the number of times you want the element in the list array
- *     at the same index to appear in the output weightedList array.
- * @return {Array.<?>} weightedList An array containing the elements in the list
- *     array, with those elements repeating a number of times based on the value
- *     at the same index in the weight array.
- */
-var generateWeightedList = function (list, weight) {
-    var weightedList = [];
-    for (var i = 0; i < weight.length; i++) {
-        var multiples = weight[i] * 100;
-        for (var j = 0; j < multiples; j++) {
-            weightedList.push(list[i]);
-        }
-    }
-    return weightedList;
-};
-
-// Array where keystroke codes will be sent.
-// If variable keys contains secretCode, player
-// god mode will be activated.  This unlocks
-// ability to enter cheats.
-var keys = [];
-
-// Variables Relating to Game Cheats
-/**
- * Object containing functions to execute when cheat codes are entered.
- */
-var cheats = {
-    'there is no cow level': function () {
-        gamestate.activeCheats.cow = true;
-        allEnemies.forEach(function (enemy) {
-            enemy.sprite = 'images/Cow.png';
-        })
-    },
-    'I AM INVINCIBLE!!!': function () {
-        gamestate.activeCheats.invincible = true;
-        player.blink();
-        player.isInvincible = true;
-    },
-    'Street fighter is cool': function () {
-        gamestate.activeCheats.hadouken = true;
-    },
-    'This game is completely Udacious!!!': function () {
-        gamestate.activeCheats.udacity = true;
-        player.isUdacious = true;
-        player.hasKey = true;
-    },
-    'Hot tub time machine': function () {
-        bootbox.alert(timeMachineMessage1, function () {
-            $('#page-header').html('HUH???');
-            gamestate.activeCheats.time = true;
-            gamestate.level = -1;
-            $('#level').html('?');
-        });
-    }
-};
-
-// Constructors
-/**
- * An Object containing data about the current game.
- * @constructor
- */
-var GameState = function () {
-    this.paused = false;
-    this.level = 1;
-    this.speed = 1;
-    this.score = 0;
-    this.activeCheats = {
-        'cow': false,
-        'hadouken': false,
-        'time': false,
-        'udacity': false,
-        'invincible': false
-    };
-    this.hadouken = false;
-};
-
-/**
- * Enemies our player must avoid.
- * @constructor
- */
-var Enemy = function () {
-    this.width = 90;
-    this.height = 80;
-    this.maxSpeed = 200;
-    this.minSpeed = 50;
-    this.xStartOptions = [];
-    this.yStartOptions = [];
-    for (var i = -3; i < 5; i++) {
-        this.xStartOptions.push(i * X_STEP);
-    }
-    for (var j = 1; j < 5; j++) {
-        this.yStartOptions.push(j * Y_STEP);
-    }
-    this.startX();
-    this.startY();
-    this.setSpeed();
-    this.sprite = 'images/enemy-bug.png';
-    if (gamestate.activeCheats.cow) {
-        this.sprite = 'images/Cow.png';
-    }
-};
-
-/**
- * Updates x position of enemy based on its speed and dt if the game
- * isn't paused.  If the enemy moves past the right edge of the screen
- * the enemy's position will be reset to the left side.
- * @param {number} dt Time between each execution of main function.
- */
-Enemy.prototype.update = function (dt) {
-    if (!gamestate.paused) {
-        this.x += dt * this.speed * gamestate.speed;
-    }
-    if (this.x > X_RIGHT) {
-        this.x = -3 * X_STEP;
-        this.startY();
-    }
-};
-
-/**
- * Draws enemy's sprite on screen.
- */
-Enemy.prototype.render = function () {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y - 20);
-};
-
-/**
- * @return {number} Position of enemy's left edge.
- */
-Enemy.prototype.left = function () {
-    return this.x;
-};
-
-/**
- * @return {number} Position of enemy's right edge.
- */
-Enemy.prototype.right = function () {
-    return this.x + this.width;
-};
-
-/**
- * @return {number} Position of enemy's top edge.
- */
-Enemy.prototype.top = function () {
-    return this.y;
-};
-
-/**
- * @return {number} Position of enemy's bottom edge.
- */
-Enemy.prototype.bottom = function () {
-    return this.y + this.height;
-};
-
-/**
- * Randomly chooses one of enemy's starting x-coordinates and sets enemy's
- * current x-position to that value.
- */
-Enemy.prototype.startX = function () {
-    this.x = choice(this.xStartOptions);
-    return this;
-};
-
-/**
- * Randomly chooses one of enemy's starting y-coordinates and sets enemy's
- * current y-position to that value.
- */
-Enemy.prototype.startY = function () {
-    this.y = choice(this.yStartOptions);
-    return this;
-};
-
-/**
- * Sets enemy speed to random integer between enemy's minimum and maximum speeds.
- */
-Enemy.prototype.setSpeed = function () {
-    this.speed = randInt(this.minSpeed, this.maxSpeed);
-    return this;
-};
-
-// Enemy Subclasses
-/**
- * An enemy that randomly increases speed for short bursts.
- * @constructor
- * @extends Enemy
- */
-var Charger = function () {
-    Enemy.call(this);
-    this.sprite = 'images/charger.png';
-    if (gamestate.activeCheats.cow) {
-        this.sprite = 'images/Cow.png';
-    }
-    this.charging();
-};
-
-Charger.prototype = Object.create(Enemy.prototype);
-Charger.prototype.constructor = Charger;
-
-/**
- * This method will set an interval for this enemy to "flip a coin" (produce
- * a random number) to see if it will charge.  If this enemy charges, its
- * speed increases to 700 for half a second, then returns to its orginal speed.
- */
-Charger.prototype.charging = function () {
-    // self is used so access this inside the setInterval function.
-    var self = this;
-    var originalSpeed = self.speed;
-    var chargingInterval = randInt(2000, 5000);
-    setInterval(function () {
-        var willCharge = Math.random();
-        if (willCharge > 0.5) {
-            // If "cow level" cheat is not active, change sprite
-            // to charging version.
-            if (!gamestate.activeCheats.cow) {
-                self.sprite = 'images/charger-charging.png';
-            }
-            self.speed = 700;
-            setTimeout(function () {
-                self.speed = originalSpeed;
-                // If "cow level" cheat is not active, change sprite back
-                // to original sprite.
-                if (!gamestate.activeCheats.cow) {
-                    self.sprite = 'images/charger.png';
-                }
-            }, 500);
-        }
-    }, chargingInterval)
-};
-
-/**
- * Enemy that will randomly move one step up or down.
- * @constructor
- * @extends Enemy
- */
-var Sidestepper = function () {
-    Enemy.call(this);
-    this.sideStepSpeed = 0;
-    this.newY = this.y;
-    this.sprite = 'images/sidestepper.png';
-    if (gamestate.activeCheats.cow) {
-        this.sprite = 'images/Cow.png';
-    }
-    this.sidestep();
-};
-Sidestepper.prototype = Object.create(Enemy.prototype);
-Sidestepper.prototype.constructor = Sidestepper;
-
-/**
- * Same as enemy update method but will move the sidestepper up or down
- * if it has a non-zero value for its sideStepSpeed property and it hasn't
- * reached its new row yet.
- * @param {number} dt Time between each execution of main function.
- */
-Sidestepper.prototype.update = function (dt) {
-    Enemy.prototype.update.call(this, dt);
-    if (!gamestate.paused) {
-        this.y += dt * this.sideStepSpeed * gamestate.speed;
-        // If this sidestepper has reached or passed its target row,
-        // set it's y-position to the target row and stop its y-movement.
-        if (this.sideStepSpeed > 0 && this.y > this.newY || this.sideStepSpeed < 0 && this.y < this.newY) {
-            this.y = this.newY;
-            this.sideStepSpeed = 0;
-        }
-    }
-};
-
-/**
- * This method will set an interval for this enemy to "flip a coin" (produce
- * a random number) to see if it will step up or down.  If this enemy will step,
- * then there is another "coin flip" to check if the direction will be up or
- * down.
- */
-Sidestepper.prototype.sidestep = function () {
-    // self is used to access this inside the setInterval function.
-    var self = this;
-    var steppingInterval = randInt(1000, 3000);
-    var newY;
-    setInterval(function () {
-        var willStep = Math.random();
-        if (willStep > 0.3 && self.sideStepSpeed === 0) {
-            var upOrDown = Math.random();
-            // Make sure this enemy won't be moving into the bottom row
-            // (where the player starts) by moving down.
-            if (upOrDown >= 0.5 && self.y < Y_BOTTOM - 2 * Y_STEP) {
-                self.newY = self.y + Y_STEP;
-                self.sideStepSpeed = 100;
-                // Make sure this enemy won't be moving into the top row
-                // (with the end point) by moving up.
-            } else if (upOrDown < 0.5 && self.y > Y_TOP + Y_STEP) {
-                self.newY = self.y - Y_STEP;
-                self.sideStepSpeed = -100;
-            }
-        }
-    }, steppingInterval)
-};
-
-/**
- * An enemy that turns around when it gets past the edge of the screen.
- * It will also randomly turn around sometimes.
- * @constructor
- * @extends Enemy
- */
-var Backtracker = function () {
-    Enemy.call(this);
-    this.sprite = 'images/backtracker.png';
-    if (gamestate.activeCheats.cow) {
-        this.sprite = 'images/Cow.png';
-    }
-    this.backtrack();
-};
-Backtracker.prototype = Object.create(Enemy.prototype);
-Backtracker.prototype.constructor = Backtracker;
-
-/**
- * Updates x position of enemy based on its speed and dt if the game
- * isn't paused.  If the enemy moves past the right or left edge of the
- * screen, it will change direction.
- * @param {number} dt Time between each execution of main function.
- */
-Backtracker.prototype.update = function (dt) {
-    if (!gamestate.paused) {
-        this.x += dt * this.speed * gamestate.speed;
-    }
-    if (this.left() > X_RIGHT + 2 * X_STEP && this.speed > 0) {
-        // Multiply speed by negative one to turn around.
-        this.speed *= -1;
-        if (gamestate.activeCheats.cow) {
-            // Flip to the appropriate sprite for this enemy's movement.
-            this.sprite = 'images/Cow-reverse.png';
-        } else {
-            this.sprite = 'images/backtracker-reverse.png';
-        }
-    }
-    if (this.right() < X_LEFT - 2 * X_STEP && this.speed < 0) {
-        // Multiply speed by negative one to turn around.
-        this.speed *= -1;
-        if (gamestate.activeCheats.cow) {
-            // Flip to the appropriate sprite for this enemy's movement.
-            this.sprite = 'images/Cow.png';
-        } else {
-            this.sprite = 'images/backtracker.png';
-        }
-    }
-};
-
-/**
- * This method will set an interval for this enemy to "flip a coin" (produce
- * a random number) to see if it will change direction.  If the enemy turns
- * around, its sprite also needs to be replaced so it is facing the correct
- * direction.
- */
-Backtracker.prototype.backtrack = function () {
-    // self is used to access this inside the setInterval function.
-    var self = this;
-    var backtrackInterval = randInt(5000, 10000);
-    setInterval(function () {
-        var willBacktrack = Math.random();
-        if (willBacktrack > 0.2) {
-            self.speed *= -1;
-            if (!gamestate.activeCheats.cow) {
-                // Flip to appropriate sprite based on this enemy's movement
-                // (assuming cow cheat is not active)
-                if (self.speed > 0) {
-                    self.sprite = 'images/backtracker.png';
-                } else {
-                    self.sprite = 'images/backtracker-reverse.png';
-                }
-            } else {
-                // Flip to appropriate cow sprite based on this enemy's movement
-                if (self.speed > 0) {
-                    self.sprite = 'images/Cow.png';
-                } else {
-                    self.sprite = 'images/Cow-reverse.png';
-                }
-            }
-        }
-    }, backtrackInterval);
-};
-
-/**
- * An enemy with a slow base speed.
- * @constructor
- * @extends Enemy
- */
-var Slowpoke = function () {
-    Enemy.call(this);
-    this.sprite = 'images/slowpoke.png';
-    if (gamestate.activeCheats.cow) {
-        this.sprite = 'images/Cow.png';
-    }
-    this.minSpeed = 15;
-    this.maxSpeed = 25;
-    this.setSpeed();
-};
-
-Slowpoke.prototype = Object.create(Enemy.prototype);
-Slowpoke.prototype.constructor = Slowpoke;
-
-/**
- * A long enemy.
- * @constructor
- * @extends Enemy
- */
-var Centipede = function () {
-    Enemy.call(this);
-    this.sprite = 'images/centipede.png';
-    if (gamestate.activeCheats.cow) {
-        this.sprite = 'images/Cow-centipede.png';
-    }
-    this.width = 270;
-};
-
-Centipede.prototype = Object.create(Enemy.prototype);
-Centipede.prototype.constructor = Centipede;
-
-
-/**
- * A player class for the user to control.
- * @constructor
- */
-var Player = function () {
-    this.width = 60;
-    this.height = 80;
-    this.maxLives = 5;
-    this.lives = 3;
-    this.isInvincible = false;
-    this.hasKey = false;
-    this.startX();
-    this.startY();
-    this.sprite = 'images/char-boy.png';
-};
-
-Player.prototype.update = function () {
-    // Does nothing for now.
-};
-
-/**
- * Method to draw player on the screen.  Change sprite to Udacity logo
- * if "Udacious" cheat is enabled.
- */
-Player.prototype.render = function () {
-    if (gamestate.activeCheats.udacity) {
-        ctx.drawImage(Resources.get('images/Udacity.png'), this.x, this.y + 20);
-    } else {
-        ctx.drawImage(Resources.get(this.sprite), this.x, this.y - 20);
-        if (this.hasKey) {
-            ctx.drawImage(Resources.get('images/Key-Small.png'),
-                          this.x + 15, this.y + 70);
-        }
-    }
-};
-
-/**
- * Sets player's x-coordinate to x-position of map start point.
- */
-Player.prototype.startX = function () {
-    this.x = map.start.x;
-    return this;
-};
-
-/**
- * Sets player's y-coordinate to y-position of map start point.
- */
-Player.prototype.startY = function () {
-    this.y = map.start.y;
-    return this;
-};
-
-/**
- * @return {number} Position of player's left edge.
- */
-Player.prototype.left = function () {
-    return this.x + 20;
-};
-
-/**
- * @return {number} Position of player's right edge.
- */
-Player.prototype.right = function () {
-    return this.x + this.width;
-};
-
-/**
- * @return {number} Position of player's top edge.
- */
-Player.prototype.top = function () {
-    return this.y;
-};
-
-/**
- * @return {number} Position of player's bottom edge.
- */
-Player.prototype.bottom = function () {
-    return this.y + this.height;
-};
-
-/**
- * Method to change the position of the player based on the user's keyboard
- * input.
- * @param {string} direction The string corresponding to the keystroke event
- *     keycode in the allowedKeys Object.  The direction will be the direction
- *     of the arrow key.
- */
-Player.prototype.move = function (direction) {
-    // Set new coordinates equal to current coordinates.
-    var newX = this.x;
-    var newY = this.y;
-    // Update coordinates based on keystroke.
-    if (direction === 'left') {
-        newX = this.x - X_STEP;
-    }
-    if (direction === 'right') {
-        newX = this.x + X_STEP;
-    }
-    if (direction === 'up') {
-        newY = this.y - Y_STEP;
-    }
-    if (direction === 'down') {
-        newY = this.y + Y_STEP;
-    }
-    // If time machine cheat is enabled, reverse all directions.
-    if (gamestate.activeCheats.time) {
-        if (direction === 'left') {
-            newX += 2 * X_STEP;
-        }
-        if (direction === 'right') {
-            newX -= 2 * X_STEP;
-        }
-        if (direction === 'up') {
-            newY += 2 * Y_STEP;
-        }
-        if (direction === 'down') {
-            newY -= 2 * Y_STEP;
-        }
-    }
-    var onMap = false;
-    map.tiles.forEach(function (tile) {
-        // Want to make sure the new coordinates are still on the map.  If not
-        // don't move the player.
-        if (newX === tile.x && newY === tile.y) {
-            onMap = true;
-        }
-    });
-
-    if (onMap) {
-        // Don't move the player if the new coordinates are at the end point
-        // and the player doesn't have the key.
-        if (newX === map.end.x && newY === map.end.y && !this.hasKey) {
-            return;
-        }
-        var hitRock = false;
-        map.rocks.forEach(function (rock) {
-            // Don't move the player if the new coordinates are the same
-            // as the coordinates of a rock.
-            if (newX === rock.x && newY === rock.y) {
-                hitRock = true;
-
-            }
-        });
-        // If all these tests have been passed, move the player.
-        if (!hitRock) {
-            this.x = newX;
-            this.y = newY;
-        }
-    }
-};
-
-/**
- * Pauses the game and creates a prompt box for the user to enter cheats.
- * If the user enters a valid cheat, the corresponding cheat in the cheats
- * Object will execute.  Otherwise the game will unpause and nothing will
- * happen.
- */
-Player.prototype.enterCommand = function () {
-    gamestate.paused = true;
-    bootbox.prompt(commandMessage, function (command) {
-        // Make sure the user entered something.
-        if (command !== null) {
-            // If there is a cheat for the string the player entered, launch
-            // the correct dialog box for it, then execute the associated
-            // function.
-            if (cheats[command]) {
-                bootbox.alert(cheatMessages[command], function () {
-                    gamestate.paused = false;
-                });
-                cheats[command]();
-            } else {
-                gamestate.paused = false;
-            }
-        } else {
-            gamestate.paused = false;
-        }
-    });
-};
-
-/**
- * A method to let the user manipulate the player using the keyboard.  Different
- * keys activate different player actions.
- * @param {string} input The string corresponding to the keystroke event keycode
- *     in the allowedKeys Object.
- */
-Player.prototype.handleInput = function (input) {
-    if (!gamestate.paused) {
-        if (input === 'left' || 'right' || 'up' || 'down') {
-            this.move(input);
-        }
-        if (input === 'p') {
-            pauseAlert(pauseMessage);
-        }
-        // Inputs that will have an effect only if player enters secretCode.
-        if (this.godMode) {
-            if (input === 'c') {
-                this.enterCommand();
-            }
-            if (gamestate.activeCheats.hadouken) {
-                if (input === 'a' || input === 'd') {
-                    // gamestate.hadouken is used to let the renderHadouken
-                    // function know if it should do anything.  "HADOUKEN!!!"
-                    // should appear on the screen briefly above the player
-                    // every time they use the attack.
-                    gamestate.hadouken = true;
-                    setTimeout(function () {
-                        gamestate.hadouken = false;
-                    }, 500);
-                    allAttacks.push(new Hadouken(input));
-                }
-            }
-            if (gamestate.activeCheats.udacity) {
-                if (input === 'q' || input === 'e') {
-                    allAttacks.push(new FrontEndAttack(input));
-                }
-            }
-        }
-    }
-};
-
-/**
- * Alternates player's sprites to make a blinking effect.
- * Used when player enables invincibility cheat.
- */
-Player.prototype.blink = function () {
-    var self = this;
-    setInterval(function () {
-        self.sprite = 'images/char-boy-blink1.png';
-        setTimeout(function () {
-            self.sprite = 'images/char-boy-blink2.png';
-        }, 100);
-        setTimeout(function () {
-            self.sprite = 'images/char-boy-blink3.png';
-        }, 200);
-    }, 300);
-};
-
-
-/**
- * An attack class that will destroy enemies when they collide.
- * Attacks will originate at the coordinates of the player.
- * This class is not used, but is the base for other attack subclasses.
- * @constructor
- */
-var Attack = function () {
-    this.x = player.x;
-    this.y = player.y;
-    this.width = 80;
-    this.height = 80;
-    this.renderOffsetY = 40
-};
-
-/**
- * Updates x-position of attack based on its speed and dt if the game
- * isn't paused.  If the attack moves past either edge of the screen
- * its speed will be reduced to zero.  Attacks that aren't moving
- * will be removed from the allAttacks array (and the game).
- * @param {number} dt Time between each execution of main function.
- */
-Attack.prototype.update = function (dt) {
-    if (!gamestate.paused) {
-        this.x += dt * this.speed * gamestate.speed;
-    }
-    if (this.x > X_RIGHT || this.x < X_LEFT - X_STEP) {
-        this.speed = 0;
-    }
-};
-
-/**
- * Draws attack's sprite on screen.
- */
-Attack.prototype.render = function () {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y +
-        this.renderOffsetY);
-};
-
-/**
- * @return {number} Position of attack's left edge.
- */
-Attack.prototype.left = function () {
-    return this.x;
-};
-
-/**
- * @return {number} Position of attack's right edge.
- */
-Attack.prototype.right = function () {
-    return this.x + this.width;
-};
-
-/**
- * @return {number} Position of attack's top edge.
- */
-Attack.prototype.top = function () {
-    return this.y;
-};
 
-/**
- * @return {number} Position of attack's bottom edge.
- */
-Attack.prototype.bottom = function () {
-    return this.y + this.height;
-};
-
-/**
- * Hadouken attack from Street Fighter!  Player can use this attack
- * after enabling the Street Fighter cheat.
- * @constructor
- * @extends Attack
- * @param {string} input The string corresponding to the keystroke
- *     event keycode in the allowedKeys Object.  This will determine
- *     whether the attack is sent left or right.
- */
-var Hadouken = function (input) {
-    Attack.call(this);
-    if (input === 'a') {
-        this.speed = -300;
-        this.sprite = 'images/Hadouken-left.png';
-    } else if (input === 'd') {
-        this.speed = 300;
-        this.sprite = 'images/Hadouken-right.png';
-    }
-};
-
-Hadouken.prototype = Object.create(Attack.prototype);
-Hadouken.prototype.constructor = Hadouken;
-
-/**
- * Attack using the powers of Front-End Web Development! (HTML, CSS, JavaScript)
- * Similar to Hadouken but hits 3 rows of enemies!
- * @constructor
- * @extends Attack
- * @param {string} input The string corresponding to the keystroke
- *     event keycode in the allowedKeys Object.  This will determine
- *     whether the attack is sent left or right.
- */
-var FrontEndAttack = function (input) {
-    Attack.call(this);
-    // Make top of attack one step up from player.
-    this.y = player.y - Y_STEP;
-    // Offset image to make it appear in the correct position on screen.
-    this.renderOffsetY = Y_STEP - 30;
-    this.height = 210;
-
-    if (input === 'q') {
-        this.speed = -300;
-    } else if (input === 'e') {
-        this.speed = 300;
-    }
-    this.sprite = 'images/Front-End.png';
-};
-
-FrontEndAttack.prototype = Object.create(Attack.prototype);
-FrontEndAttack.prototype.constructor = FrontEndAttack;
-
-/**
- * Items for the player to collect!  This class is not used but is the base
- * for all item subclasses.
- * @constructor
- * @param {number} x x-position of item.
- * @param {number} y y-position of item.
- */
-var Item = function (x, y) {
-    this.x = x;
-    this.y = y;
-    this.renderOffsetY = -20;
-    // If an item's destroyed property is true, it will be removed from
-    // allItems array during the update function.
-    this.destroyed = false;
-};
-
-/**
- * Draws item's sprite on screen.
- */
-Item.prototype.render = function () {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y +
-        this.renderOffsetY);;
-};
-
-Item.prototype.update = function () {
-    // Does nothing for now.
-};
-
-/**
- * When the player collects this item, they will gain one life.
- * @constructor
- * @extends Item
- * @param {number} x x-position of item.
- * @param {number} y y-position of item.
- */
-var Heart = function (x, y) {
-    Item.call(this, x, y);
-    this.sprite = 'images/Heart.png';
-};
-
-Heart.prototype = Object.create(Item.prototype);
-Heart.prototype.constructor = Heart;
-
-/**
- * When the player collects this item, the player's hasKey property will be set
- * to true.  This will enable the player to move the the level's door and
- * continue to the next level.
- * @constructor
- * @extends Item
- * @param {number} x x-position of item.
- * @param {number} y y-position of item.
- */
-var Key = function (x, y) {
-    Item.call(this, x, y);
-    this.sprite = 'images/Key.png';
-};
-
-Key.prototype = Object.create(Item.prototype);
-Key.prototype.constructor = Key;
-
-/**
- * When the player collects this item, the score increases.  This item will
- * only exist on a level for a set time, then it will disappear.
- * @constructor
- * @extends Item
- * @param {number} x x-position of item.
- * @param {number} y y-position of item.
- */
-var Gem = function (x, y) {
-    Item.call(this, x, y);
-    this.spriteOptions = ['images/Gem Blue.png', 'images/Gem Green.png',
-                          'images/Gem Orange.png'];
-    this.sprite = choice(this.spriteOptions);
-    this.fading = false;
-    this.disappear();
+// Create the game constructor to store the game variables
+var Game = function() {
+	this.gameOver = false;
+	this.gameWin = false;
 };
 
-Gem.prototype = Object.create(Item.prototype);
-Gem.prototype.constructor = Gem;
-
-/**
- * Draws gem's sprite on screen.  Opacity is reduced if gem's fading property
- * is set to true.
- */
-Gem.prototype.render = function () {
-    if (this.fading) {
-        ctx.globalAlpha = 0.5;
-    }
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y +
-        this.renderOffsetY);
-    ctx.globalAlpha = 1;
-};
-
-/**
- * Starts two timers.  After first timer ends, the gem will fade.  After the
- * second the gem will be destroyed (removed from allItems).
+/*
+ * ENEMY CLASS
  */
-Gem.prototype.disappear = function () {
-    var thisGem = this;
-    var fadeTime = 2500;
-    var destroyTime = fadeTime + 1500;
-    setTimeout(function () {
-        thisGem.fading = true;
-    }, fadeTime);
-    setTimeout(function () {
-        thisGem.destroyed = true;
-    }, destroyTime);
-};
 
-// Note: MapTiles don't necessarily need to be Classes but I found it to be a
-// clean way to check if a player is on water.  That's why MapTile is a class,
-// Grass and Stone are subclasses, even though they don't really do anything.
-/**
- * Tiles that make up the game map.  This class isn't used, but is the base
- * for all MapTile subclasses.
- * @constructor
- * @param {number} x x-position of tile.
- * @param {number} y y-position of tile.
- */
-var MapTile = function (x, y) {
-    this.x = x;
-    this.y = y;
-};
+// Create the enemy constructor
+var Enemy = function(x,y) {
 
-/**
- * Draws MapTile sprite on the screen.
- */
-MapTile.prototype.render = function () {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-};
+	// Set the image for the enemy
+	this.sprite = 'images/enemy-bug.png';
 
-/**
- * A tile with a grass sprite.
- * @constructor
- * @extends MapTile
- */
-var Grass = function (x, y) {
-    MapTile.call(this, x, y);
-    this.sprite = 'images/grass-block.png';
-    if (gamestate.level > DARK_LEVELS) {
-        this.sprite = 'images/dead-grass-block.png';
-    }
-};
+	// Set the enemy position
+	this.x = x;
+	this.y = y;
 
-Grass.prototype = Object.create(MapTile.prototype);
-Grass.prototype.constructor = Grass;
+	// Set the speed multipler for the enemy using a random
+	// number between 1 & 5
+	this.multiplier = Math.floor((Math.random() * 5) + 1);
 
-/**
- * A tile with a stone sprite.
- * @constructor
- * @extends MapTile
- */
-var Stone = function (x, y) {
-    MapTile.call(this, x, y);
-    this.sprite = 'images/stone-block.png';
-    if (gamestate.level > DARK_LEVELS) {
-        this.sprite = 'images/dark-stone-block.png';
-    }
 };
 
-Stone.prototype = Object.create(MapTile.prototype);
-Stone.prototype.constructor = Stone;
+// Update the enemy's position and check for collisions
+Enemy.prototype.update = function(dt) {
 
-/**
- * A tile with a water sprite.
- * @constructor
- * @extends MapTile
- */
-var Water = function (x, y) {
-    MapTile.call(this, x, y);
-    this.sprite = 'images/water-block.png';
-    if (gamestate.level > DARK_LEVELS) {
-        this.sprite = 'images/lava-block.png';
-    }
-};
+	// Set the position of the enemy based on dt and the speed multipler
+	this.x = this.x + 101 * dt * this.multiplier;
 
-Water.prototype = Object.create(MapTile.prototype);
-Water.prototype.constructor = Water;
-
-/**
- * Objects or important points placed on the map, that can't be collected
- * like items.
- * @constructor
- * @param {number} x x-position of map object.
- * @param {number} y y-position of map object.
- */
-var MapObject = function (x, y) {
-    this.x = x;
-    this.y = y;
-};
+	// Check for collisions with the player
+	if (this.y == player.y && (this.x > player.x - 20 && this.x < player.x + 20)) {
 
-/**
- * Draws map object on the screen.
- */
-MapObject.prototype.render = function () {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y - 20);
-};
+		// Player has encountered an emeny and thus loses one life
+		player.lives--;
+		document.getElementsByClassName('lives')[0].innerHTML = 'Lives: ' + player.lives;
 
-/**
- * A map object that determines where the player starts on the map.
- * @constructor
- * @extends MapObject
- * @param {number} x x-position of map object.
- * @param {number} y y-position of map object.
- */
-var StartPoint = function (x, y) {
-    MapObject.call(this, x, y);
-    this.sprite = 'images/nothing.png';
-};
+		// Check to see if the player has any lives left
+		if (player.lives === 0) {
+			// Player is out of lives, show the game over image
+			game.gameOver = true;
 
-StartPoint.prototype = Object.create(MapObject.prototype);
-StartPoint.prototype.constructor = StartPoint;
-
-/**
- * The door or end point on a map.  The player needs a key to move through it.
- * @constructor
- * @extends MapObject
- * @param {number} x x-position of map object.
- * @param {number} y y-position of map object.
- */
-var Door = function (x, y) {
-    MapObject.call(this, x, y);
-    this.sprite = 'images/Door.png';
-};
+		} else {
+			// Player still has lives left, check to see if the player
+			// is currently holding a kitty
+			if (player.hold === true) {
+				// Player is holding a kitty, so find out which kitty and
+				// reset it to its original position
+				allKitties[player.kittyIdx].reset();
+			}
 
-Door.prototype = Object.create(MapObject.prototype);
-Door.prototype.constructor = Door;
-
-/**
- * A rock that blocks the way.  Players can't move on tiles that have a rock
- * on them.
- * @constructor
- * @extends MapObject
- * @param {number} x x-position of map object.
- * @param {number} y y-position of map object.
- */
-var Rock = function (x, y) {
-    MapObject.call(this, x, y);
-    this.sprite = 'images/Rock.png';
+		// Reset the player to her original position
+		player.reset();
+		}
+	}
+
+	// If the enemy goes off of the board, reset it
+	if (this.x > 750) {
+		this.reset();
+	}
+};
+
+// Reset the enemy to the left of the board with a new y position
+// and a new speed multiplier
+Enemy.prototype.reset = function() {
+	this.x = -200;
+	var yVals = [220, 140, 60];
+	this.y = yVals[Math.floor((Math.random() * 3))];
+	this.multiplier = Math.floor((Math.random() * 5) + 1);
+};
+
+// Render the enemy to the canvas
+Enemy.prototype.render = function() {
+	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+};
+
+/*
+ * PLAYER CLASS
+ */
+
+// Create the Player constructor
+var Player = function(x,y) {
+
+	// Set the player to the girl in the cat hat image
+	this.sprite = 'images/char-boy.png';
+
+	// Set the player's location
+	this.x = x;
+	this.y = y;
+
+	// Give the player 5 lives to start
+	this.lives = 5;
+
+	// Store the original position of the player for resetting later
+	this.xo = x;
+	this.yo = y;
+
+	// Set some variables related to the kitties
+	this.hold = false; // player is not holding a kitty
+	this.color = undefined; // will reflect color of currently held kitty
+
+	// If the player is holding a kitty, this will be set to the index
+	// of the currently held kitty in allKitties array
+	this.kittyIdx = undefined;
+};
+
+Player.prototype.handleInput = function(dir) {
+
+	// Change the player's position based on the user keyboard input
+	if (dir == 'up') {
+		this.y = this.y - 80;
+	} else if (dir == 'down') {
+		this.y = this.y + 80;
+	} else if (dir == 'left') {
+		this.x = this.x - 101;
+	} else if (dir == 'right') {
+		this.x = this.x + 101;
+	}
+
+	// Check the position of the player
+	if (this.x < 0) {
+		// Player is off to the left side of the board, move the player
+		// back to zero
+		this.x = 0;
+
+	} else if (this.x > 606) {
+		// Player is off to the right side of the board, move the player
+		// back to the right-most square (606)
+		this.x = 606;
+
+	} else if (this.y > 404) {
+		// Player is off the bottom of the board
+		// Reset player & kitty (if the player is holding one)
+		if (player.hold === true) {
+			allKitties[player.kittyIdx].reset();
+		}
+		this.reset();
+
+	} else if (this.y <= -20 && this.x > 0 && this.x < 606) {
+		// Player has made it to the top colored blocks
+		// Check to see if the block is the right color for the kitty
+		// If it is, put the kitty on the block
+		if (this.hold === true) {
+			if (this.color === 'red' && this.x === 101) {
+				allKitties[0].x = 101;
+				allKitties[0].y = 35;
+			} else if (this.color === 'orange' && this.x === 202) {
+				allKitties[1].x = 202;
+				allKitties[1].y = 35;
+			} else if (this.color === 'green' && this.x === 303) {
+				allKitties[2].x = 303;
+				allKitties[2].y = 35;
+			} else if (this.color === 'blue' && this.x === 404) {
+				allKitties[3].x = 404;
+				allKitties[3].y = 35;
+			} else if (this.color === 'purple' && this.x === 505) {
+				allKitties[4].x = 505;
+				allKitties[4].y = 35;
+			} else {
+
+				// Kitty did not match the color, so reset the kitty
+				allKitties[player.kittyIdx].reset();
+			}
+		}
+
+		// Check to see if the player has won the game
+		var win = true;
+		for (var w = 0; w < winPositions.length; w++) {
+			if (allKitties[w].x === winPositions[w][0] && allKitties[w].y === winPositions[w][1]) {
+				// Kitty is in the winning position, do nothing
+			} else {
+				// Set the win flag to false
+				win = false;
+			}
+		}
+
+		// If the player has won, display the game winning image
+		if (win) {
+			game.gameWin = true;
+		}
+
+		// Reset the player to her original location & image
+		this.reset();
+
+	} else if (this.y <= -20 && (this.x === 0 || this.x === 606)) {
+		// Player made it to one of the two water blocks
+
+		// Check to see if the player is holding a kitty
+		if (player.hold === true) {
+			// Player is holding a kitty, so find out which kitty and
+			// reset it to its original position
+			allKitties[player.kittyIdx].reset();
+		}
+
+		// Lose a life and reset the player
+		this.lives--;
+		if (this.lives === 0) {
+			// Player has no more lives left, show the game over image
+			game.gameOver = true;
+		} else {
+			// Player still has lives left so update the lives and reset the player
+			document.getElementsByClassName('lives')[0].innerHTML = 'Lives: ' + this.lives;
+			this.reset();
+		}
+	}
+};
+
+// Reset the player to her original position & image
+Player.prototype.reset = function() {
+	// Reset the player to the original position
+	this.x = this.xo;
+	this.y = this.yo;
+
+	// Reset the image
+	this.sprite = 'images/char-cat-girl.png';
+
+	// Reset the defauts for holding kitties
+	this.hold = false;
+	this.color = undefined;
+	this.kittyIdx = undefined;
+};
+
+// Update the player's position
+Player.prototype.update = function() {
+	this.x = this.x;
+	this.y = this.y;
+};
+
+// Render the player to the canvas
+Player.prototype.render = function() {
+	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+};
+
+/*
+ * KITTY CLASS
+ */
+
+// Create the Kitty constructor
+var Kitty = function(color, x, y) {
+
+	// Set the color of the kitty
+	this.color = color;
+	// Set the image based on the color
+	this.sprite = 'images/cat-' + color + '.png';
+
+	// Set the starting position of the kitty
+	this.x = x;
+	this.y = y;
+
+	// Set the original position of the kitty
+	// This does not change throughout one game
+	this.xo = x;
+	this.yo = y;
+};
+
+// Reset the kitty to its original position
+Kitty.prototype.reset = function() {
+	this.x = this.xo;
+	this.y = this.yo;
+};
+
+// Updates the kitty's location if the player picks it up
+Kitty.prototype.update = function () {
+	if (this.y === player.y + 65 && this.x === player.x && player.hold === false) {
+
+		// Change the player's sprite to be the girl 'holding' the correct color kitty
+		player.sprite = 'images/char-cat-girl-' + this.color + '-cat.png';
+
+		player.hold = true; // player is now holding a kitty
+		player.color = this.color; // player's color matches the kitty's color
+		player.kittyIdx = kittyIndex(this.color); // Index of currently held kitty in allKitties
+
+		// Move the kitty sprite to off of the grid so it isn't visible
+		this.x = -100;
+		this.y = -100;
+	}
+};
+
+// Renders the kitty to the canvas
+Kitty.prototype.render = function () {
+	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+};
+
+/*
+ * FUNCTIONS
+ */
+
+// Determine the index of a kitty in the allKitties array
+// based on the color of the kitty
+var kittyIndex = function(color) {
+	if (color === 'red') {
+		return 0;
+	} else if (color === 'orange') {
+		return 1;
+	} else if (color === 'green') {
+		return 2;
+	} else if (color === 'blue') {
+		return 3;
+	} else if (color === 'purple') {
+		return 4;
+	}
 };
-
-Rock.prototype = Object.create(MapObject.prototype);
-Rock.prototype.constructor = Rock;
-
-// Prevent arrow keys from scrolling window so game screen will not move
-// on user input.
-window.addEventListener("keydown", function (e) {
-    if ([37, 38, 39, 40].indexOf(e.keyCode) > -1) {
-        e.preventDefault();
-    }
-}, false);
 
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
-document.addEventListener('keyup', function (e) {
-    var allowedKeys = {
-        37: 'left',
-        38: 'up',
-        39: 'right',
-        40: 'down',
-        80: 'p',
-        67: 'c',
-        65: 'a',
-        68: 'd',
-        81: 'q',
-        69: 'e'
-    };
-    // Game initializes with a dialog box popping up.  The game hasn't been set
-    // up yet, so this checks if player has been defined to prevent the console
-    // from logging an error if the user hits the keyboard while the dialog is
-    // open.
-    if (player) {
-        if (!player.godMode) {
-            // Send player keystroke keycodes to keys array.
-            keys.push(e.keyCode);
-            // If key array, when converted to a string, contains the
-            // secret code, player unlocks god mode and is able to enter cheats.
-        }
-        player.handleInput(allowedKeys[e.keyCode]);
-    }
+document.addEventListener('keyup', function(e) {
+	var allowedKeys = {
+		37: 'left',
+		38: 'up',
+		39: 'right',
+		40: 'down'
+	};
 
+	// Pass the values to the handleInput method
+	player.handleInput(allowedKeys[e.keyCode]);
 });
 
-// Game Dialog/Messages
-var deathMessage = "Stepped on by a bug. It should have been the other way around;)";
+/*
+ * INSTANTIATE OBJECTS
+ */
 
-var gameOverMessage = "Game Over: You Lose!";
+// -- Instantiate the enemies --
 
-var openingMessage = "Let's see if you can cross without being crushed by a bug.";
+// Create the allEnemies array, which will hold all of the
+// enemy objects
+var allEnemies = [];
+// Set a varaiable for the possible y values
+var yVals = [220, 140, 60];
 
-var instructionMessage = "Use your arrow keys to move.";
+// Create the separate enemy instances
+for (var i = 0; i < 5; i++) {
 
-var pauseMessage = "<h2>Game Paused</h2><hr><p>" +
-    "Press <strong>Enter</strong> to resume.</p>";
+	// Set a starting x-position based on a random value
+	var x = Math.floor((Math.random() * -1000) + 1);
+
+	// Set a starting y-position based on a random selection
+	// of the 3 possible values
+	var y = yVals[Math.floor(Math.random() * 3)];
+
+	// Create the new enemy object
+	var enemy = new Enemy(x, y);
+
+	// Push the enemy into the array
+	allEnemies.push(enemy);
+}
+
+// -- Instantiate the player --
+var player = new Player(303, 380);
+
+// -- Instantiate the kitties --
+
+// Set up the possible colors, x-values, and y-values
+var colors = ['red', 'orange', 'green', 'blue', 'purple'];
+var xVals = [0, 101, 202, 303, 404, 505, 606];
+var yValsKitty = [285, 205, 125];
+
+// Create a variable for all the possible xy locations
+// This will be used to ensure only one kitty occupies
+// each possible spot
+var xyLocations = [];
+
+// Look through the x & y values and push each location pair
+// into the xyLocations array
+for (var l = 0; l < xVals.length; l++) {
+	for (var n = 0; n < yValsKitty.length; n++) {
+		xyLocations.push([xVals[l], yValsKitty[n]]);
+	}
+}
+
+// Create the allKitties array, which will hold all of the
+// kitty objects
+var allKitties = [];
+
+// Create the separate kitty instances
+for (var j = 0; j < 5; j++) {
+
+	// Select a random starting location for the kitty
+	var index = Math.floor(Math.random() * (21 - j));
+	var xy = xyLocations[index];
+	var x = xy[0];
+	var y = xy[1];
+
+	// Create the new kitty object
+	var kitty = new Kitty(colors[j], x, y);
+
+	// Push the new kitty into the array
+	allKitties.push(kitty);
+
+	// Remove the xy pair from the array
+	xyLocations.splice(index, 1);
+}
+
+// Set up the winning positions of the kitties
+var winPositions = [[101, 35], [202, 35], [303, 35], [404, 35], [505, 35]];
+
+// -- Instantiate the game --
+var game = new Game();
