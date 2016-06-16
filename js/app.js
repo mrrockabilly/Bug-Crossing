@@ -48,11 +48,11 @@ Enemy.prototype.update = function(dt) {
 
 		} else {
 			// Player still has lives left, check to see if the player
-			// is currently holding a kitty
+			// is currently holding a gem
 			if (player.hold === true) {
-				// Player is holding a kitty, so find out which kitty and
+				// Player is holding a gem, so find out which gem and
 				// reset it to its original position
-				allKitties[player.kittyIdx].reset();
+				allGem[player.gemIdx].reset();
 			}
 
 		// Reset the player to her original position
@@ -101,13 +101,13 @@ var Player = function(x,y) {
 	this.xo = x;
 	this.yo = y;
 
-	// Set some variables related to the kitties
-	this.hold = false; // player is not holding a kitty
-	this.color = undefined; // will reflect color of currently held kitty
+	// Set some variables related to the Gem
+	this.hold = false; // player is not holding a gem
+	this.color = undefined; // will reflect color of currently held gem
 
-	// If the player is holding a kitty, this will be set to the index
-	// of the currently held kitty in allKitties array
-	this.kittyIdx = undefined;
+	// If the player is holding a gem, this will be set to the index
+	// of the currently held gem in allGem array
+	this.gemIdx = undefined;
 };
 
 Player.prototype.handleInput = function(dir) {
@@ -136,44 +136,44 @@ Player.prototype.handleInput = function(dir) {
 
 	} else if (this.y > 404) {
 		// Player is off the bottom of the board
-		// Reset player & kitty (if the player is holding one)
+		// Reset player & gem (if the player is holding one)
 		if (player.hold === true) {
-			allKitties[player.kittyIdx].reset();
+			allGem[player.gemIdx].reset();
 		}
 		this.reset();
 
 	} else if (this.y <= -20 && this.x > 0 && this.x < 606) {
 		// Player has made it to the top colored blocks
-		// Check to see if the block is the right color for the kitty
-		// If it is, put the kitty on the block
+		// Check to see if the block is the right color for the gem
+		// If it is, put the gem on the block
 		if (this.hold === true) {
 			if (this.color === 'red' && this.x === 101) {
-				allKitties[0].x = 101;
-				allKitties[0].y = 35;
+				allGem[0].x = 101;
+				allGem[0].y = 35;
 			} else if (this.color === 'orange' && this.x === 202) {
-				allKitties[1].x = 202;
-				allKitties[1].y = 35;
+				allGem[1].x = 202;
+				allGem[1].y = 35;
 			} else if (this.color === 'green' && this.x === 303) {
-				allKitties[2].x = 303;
-				allKitties[2].y = 35;
+				allGem[2].x = 303;
+				allGem[2].y = 35;
 			} else if (this.color === 'blue' && this.x === 404) {
-				allKitties[3].x = 404;
-				allKitties[3].y = 35;
+				allGem[3].x = 404;
+				allGem[3].y = 35;
 			} else if (this.color === 'purple' && this.x === 505) {
-				allKitties[4].x = 505;
-				allKitties[4].y = 35;
+				allGem[4].x = 505;
+				allGem[4].y = 35;
 			} else {
 
-				// Kitty did not match the color, so reset the kitty
-				allKitties[player.kittyIdx].reset();
+				// Gem did not match the color, so reset the gem
+				allGem[player.gemIdx].reset();
 			}
 		}
 
 		// Check to see if the player has won the game
 		var win = true;
 		for (var w = 0; w < winPositions.length; w++) {
-			if (allKitties[w].x === winPositions[w][0] && allKitties[w].y === winPositions[w][1]) {
-				// Kitty is in the winning position, do nothing
+			if (allGem[w].x === winPositions[w][0] && allGem[w].y === winPositions[w][1]) {
+				// gem is in the winning position, do nothing
 			} else {
 				// Set the win flag to false
 				win = false;
@@ -191,11 +191,11 @@ Player.prototype.handleInput = function(dir) {
 	} else if (this.y <= -20 && (this.x === 0 || this.x === 606)) {
 		// Player made it to one of the two water blocks
 
-		// Check to see if the player is holding a kitty
+		// Check to see if the player is holding a gem
 		if (player.hold === true) {
-			// Player is holding a kitty, so find out which kitty and
+			// Player is holding a gem, so find out which gem and
 			// reset it to its original position
-			allKitties[player.kittyIdx].reset();
+			allGem[player.gemIdx].reset();
 		}
 
 		// Lose a life and reset the player
@@ -220,10 +220,10 @@ Player.prototype.reset = function() {
 	// Reset the image
 	this.sprite = 'images/char-cat-girl.png';
 
-	// Reset the defauts for holding kitties
+	// Reset the defauts for holding Gem
 	this.hold = false;
 	this.color = undefined;
-	this.kittyIdx = undefined;
+	this.gemIdx = undefined;
 };
 
 // Update the player's position
@@ -238,52 +238,52 @@ Player.prototype.render = function() {
 };
 
 /*
- * KITTY CLASS
+ * gem CLASS
  */
 
-// Create the Kitty constructor
-var Kitty = function(color, x, y) {
+// Create the gem constructor
+var Gem = function(color, x, y) {
 
-	// Set the color of the kitty
+	// Set the color of the Gem
 	this.color = color;
 	// Set the image based on the color
 	this.sprite = 'images/cat-' + color + '.png';
 
-	// Set the starting position of the kitty
+	// Set the starting position of the Gem
 	this.x = x;
 	this.y = y;
 
-	// Set the original position of the kitty
+	// Set the original position of the Gem
 	// This does not change throughout one game
 	this.xo = x;
 	this.yo = y;
 };
 
-// Reset the kitty to its original position
-Kitty.prototype.reset = function() {
+// Reset the Gem to its original position
+Gem.prototype.reset = function() {
 	this.x = this.xo;
 	this.y = this.yo;
 };
 
-// Updates the kitty's location if the player picks it up
-Kitty.prototype.update = function () {
+// Updates the Gem's location if the player picks it up
+Gem.prototype.update = function () {
 	if (this.y === player.y + 65 && this.x === player.x && player.hold === false) {
 
-		// Change the player's sprite to be the girl 'holding' the correct color kitty
+		// Change the player's sprite to be the girl 'holding' the correct color Gem
 		player.sprite = 'images/char-cat-girl-' + this.color + '-cat.png';
 
-		player.hold = true; // player is now holding a kitty
-		player.color = this.color; // player's color matches the kitty's color
-		player.kittyIdx = kittyIndex(this.color); // Index of currently held kitty in allKitties
+		player.hold = true; // player is now holding a Gem
+		player.color = this.color; // player's color matches the Gem's color
+		player.gemIdx = gemIndex(this.color); // Index of currently held gem in allGem
 
-		// Move the kitty sprite to off of the grid so it isn't visible
+		// Move the gem sprite to off of the grid so it isn't visible
 		this.x = -100;
 		this.y = -100;
 	}
 };
 
-// Renders the kitty to the canvas
-Kitty.prototype.render = function () {
+// Renders the gem to the canvas
+Gem.prototype.render = function () {
 	ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
@@ -291,9 +291,9 @@ Kitty.prototype.render = function () {
  * FUNCTIONS
  */
 
-// Determine the index of a kitty in the allKitties array
-// based on the color of the kitty
-var kittyIndex = function(color) {
+// Determine the index of a gem in the allGem array
+// based on the color of the gem
+var gemIndex = function(color) {
 	if (color === 'red') {
 		return 0;
 	} else if (color === 'orange') {
@@ -353,50 +353,50 @@ for (var i = 0; i < 5; i++) {
 // -- Instantiate the player --
 var player = new Player(303, 380);
 
-// -- Instantiate the kitties --
+// -- Instantiate the Gem --
 
 // Set up the possible colors, x-values, and y-values
 var colors = ['red', 'orange', 'green', 'blue', 'purple'];
 var xVals = [0, 101, 202, 303, 404, 505, 606];
-var yValsKitty = [285, 205, 125];
+var yValsGem = [285, 205, 125];
 
 // Create a variable for all the possible xy locations
-// This will be used to ensure only one kitty occupies
+// This will be used to ensure only one Gem occupies
 // each possible spot
 var xyLocations = [];
 
 // Look through the x & y values and push each location pair
 // into the xyLocations array
 for (var l = 0; l < xVals.length; l++) {
-	for (var n = 0; n < yValsKitty.length; n++) {
-		xyLocations.push([xVals[l], yValsKitty[n]]);
+	for (var n = 0; n < yValsGem.length; n++) {
+		xyLocations.push([xVals[l], yValsGem[n]]);
 	}
 }
 
-// Create the allKitties array, which will hold all of the
-// kitty objects
-var allKitties = [];
+// Create the allGem array, which will hold all of the
+// Gem objects
+var allGem = [];
 
-// Create the separate kitty instances
+// Create the separate Gem instances
 for (var j = 0; j < 5; j++) {
 
-	// Select a random starting location for the kitty
+	// Select a random starting location for the Gem
 	var index = Math.floor(Math.random() * (21 - j));
 	var xy = xyLocations[index];
 	var x = xy[0];
 	var y = xy[1];
 
-	// Create the new kitty object
-	var kitty = new Kitty(colors[j], x, y);
+	// Create the new Gem object
+	var gem = new Gem(colors[j], x, y);
 
-	// Push the new kitty into the array
-	allKitties.push(kitty);
+	// Push the new gem into the array
+	allGem.push(gem);
 
 	// Remove the xy pair from the array
 	xyLocations.splice(index, 1);
 }
 
-// Set up the winning positions of the kitties
+// Set up the winning positions of the Gem
 var winPositions = [[101, 35], [202, 35], [303, 35], [404, 35], [505, 35]];
 
 // -- Instantiate the game --
