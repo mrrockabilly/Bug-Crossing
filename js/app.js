@@ -247,7 +247,7 @@ var Gem = function(color, x, y) {
 	// Set the color of the Gem
 	this.color = color;
 	// Set the image based on the color
-	this.sprite = 'images/cat-' + color + '.png';
+	this.sprite = 'images/Gem-' + color + '.png';
 
 	// Set the starting position of the Gem
 	this.x = x;
@@ -356,7 +356,7 @@ var player = new Player(303, 380);
 // -- Instantiate the Gem --
 
 // Set up the possible colors, x-values, and y-values
-var colors = ['red', 'orange', 'green', 'blue', 'purple'];
+var colors = ['Orange', 'Green', 'Blue'];
 var xVals = [0, 101, 202, 303, 404, 505, 606];
 var yValsGem = [285, 205, 125];
 
