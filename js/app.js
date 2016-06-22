@@ -323,29 +323,7 @@ function keyFunction(e) {
     player.handleInput(allowedKeys[e.keyCode]);
 }
 
-function playSound(){
-    $("#mute-sound-symbol").show();
-    gameSound = new Audio('sounds/251461__joshuaempyre__arcade-music-loop.wav');
-    gameSound.play(); // (re-)start music
-}
 
-function stopSound(){
-    $("#mute-sound-symbol").hide();
-    $("#play-sound-symbol").hide();
-    gameSound.pause(); // stop music
-}
-
-$("#mute-sound-symbol").click(function(){
-    $("#mute-sound-symbol").hide();
-    $("#play-sound-symbol").show();
-    gameSound.pause();
-});
-
-$("#play-sound-symbol").click(function(){
-    $("#play-sound-symbol").hide();
-    $("#mute-sound-symbol").show();
-    gameSound.play();
-});
 
 // set a timer for the game, started in start() function in engine.js
 // with a duration of 'GAME_DURATION' in milliseconds
