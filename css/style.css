@@ -20,14 +20,14 @@ h2 {
 }
 
 #startScreen {
-  position: absolute;
+  float: right;
   margin-left: auto;
   margin-right: auto;
   left: 0;
   right: 0;
   height: 606px;
   width: 505px;
-  background-color: red;
+  background-color: white;
 }
 
 #startButton {

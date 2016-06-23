@@ -1,6 +1,6 @@
 // Globals to set the min and max coordinate values for moving Player and Enemies on the canvas
 
-var GAME_DURATION = 30000; // value in milliseconds = 30 secs
+var GAME_DURATION = 10000; // value in milliseconds = 30 secs
 var NUM_ENENIES = 4;
 
 var LEN_X = 101;
@@ -379,3 +379,27 @@ function gameStop() {
     player.reset(0); // move player to start position
     removeCollectiblesFromCanvas();
 }
+
+
+// Game Dialog/Messages
+var deathMessage = "<h2>Stepped on by a bug!</h2><hr><div class='text-left'>" +
+    "<p>It should have been the other way around.</p>";
+
+var gameOverMessage = "<h2>Game Over!</h2><hr><p>...or " +
+    "style='text-style:underline'>Your Stats</h5><p style=" +
+    "'text-align:center'>Level: <span id='finalLevel'></span>" +
+    "</p><p style='text-align:center'>Score: <span id='score'></span></p>";
+
+var openingMessage = "<h2>Lets see how you do trying to cross the road.</h2><div class='text-left'>";
+
+var instructionMessage = "<h2>Instructions</h2><hr><div " +
+    "class='text-left'><p>Use the arrow keys to move.</p>" +
+    "<img src='images/arrow_keys.png' alt='Arrow Keys'>" +
+    "<p>Move him to the key like I showed you before, then get him to that " +
+    "there rock-door.  (And stay away from water.  Our friend Steve here " +
+    "can't swim.)</p><p>The faster you complete a level, the more points " +
+    "you get! And you'll get even more points if you collect a " +
+    "<strong>Gem</strong> along the way!</p><p>Keep on going as long as " +
+    "you can!</p><p>Also you can press <strong>P</strong> at any time to " +
+    "<strong>Pause</strong> the game.  Press <strong>Enter</strong> to " +
+    "resume play.</p></div>";
