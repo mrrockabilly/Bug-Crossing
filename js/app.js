@@ -1,6 +1,6 @@
 // Globals to set the min and max coordinate values for moving Player and Enemies on the canvas
 
-var GAME_DURATION = 10000; // value in milliseconds = 30 secs
+var GAME_DURATION = 60000; // value in milliseconds = 30 secs
 var NUM_ENENIES = 4;
 
 var LEN_X = 101;
