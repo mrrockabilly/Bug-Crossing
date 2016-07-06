@@ -325,7 +325,7 @@ function keyFunction(e) {
 
 function playSound(){
     $("#mute-sound-symbol").show();
-    gameSound = new Audio('sounds/251461__joshuaempyre__arcade-music-loop.wav');
+    gameSound = new Audio('sounds/retroArcadeMusic.wav');
     gameSound.play(); // (re-)start music
 }
 
