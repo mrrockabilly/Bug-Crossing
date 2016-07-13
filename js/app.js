@@ -134,7 +134,7 @@ var Player = function() {
 };
 
 Player.prototype.setSprite = function() {
-    this.sprite = 'images/char-boy.png';
+    this.sprite = 'images/char-cat-girl.png';
 };
 
 // Update the player's position,
