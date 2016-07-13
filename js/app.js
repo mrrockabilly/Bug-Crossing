@@ -10,8 +10,8 @@ var startingPositionX = 2 * LEN_X;
 var startingPositionY = 5 * LEN_Y;
 var PLAYER_MIN_X_POS = 0;
 var PLAYER_MIN_Y_POS = -40;
-var PLAYER_MAX_X_POS = 4 * LEN_X; //404;
-var PLAYER_MAX_Y_POS = 5 * LEN_Y; //415;
+var PLAYER_MAX_X_POS = 4 * LEN_X;
+var PLAYER_MAX_Y_POS = 5 * LEN_Y;
 var playerPrevXPos;
 var playerPrevYPos;
 
