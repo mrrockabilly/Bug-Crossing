@@ -1,13 +1,13 @@
 // Globals to set the min and max coordinate values for moving Player and Enemies on the canvas
 
-var GAME_DURATION = 60000; // value in milliseconds = 30 secs
+var GAME_DURATION = 60000; // value in milliseconds = 60 secs
 var NUM_ENENIES = 4;
 
 var LEN_X = 101;
 var LEN_Y = 83;
 
-var PLAYER_START_X_POS = 2 * LEN_X;
-var PLAYER_START_Y_POS = 5 * LEN_Y;
+var startingPositionX = 2 * LEN_X;
+var startingPositionY = 5 * LEN_Y;
 var PLAYER_MIN_X_POS = 0;
 var PLAYER_MIN_Y_POS = -40;
 var PLAYER_MAX_X_POS = 4 * LEN_X; //404;
@@ -128,8 +128,8 @@ var Player = function() {
     // The image/sprite for our enemies, this uses
     // a helper we've provided to easily load images
     this.setSprite();
-    this.x = PLAYER_START_X_POS;
-    this.y = PLAYER_START_Y_POS;
+    this.x = startingPositionX;
+    this.y = startingPositionY;
     this.score = 0;
 };
 
@@ -187,8 +187,8 @@ Player.prototype.handleInput = function(key) {
 };
 
 Player.prototype.reset = function(score){
-    this.x = PLAYER_START_X_POS;
-    this.y = PLAYER_START_Y_POS;
+    this.x = startingPositionX;
+    this.y = startingPositionY;
     this.score = score;
     var scoreEl = document.getElementById('score');
     scoreEl.innerHTML = this.score;
