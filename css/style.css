@@ -23,3 +23,12 @@ a {
 	text-align: center;
 	font-size: 18px;
 }
+
+#scoreInfo {
+	position: absolute;
+	left: 35%;
+	top: 60%;
+	width: 30%;
+	text-align: center;
+	font-size: 18px;
+}
