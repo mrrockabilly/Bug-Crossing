@@ -101,6 +101,7 @@ var Engine = (function(global) {
     function start() {
         init();
         setTimeout(function(){ stop(); }, GAME_DURATION);
+
     }
 
     // This it the kickoff function that starts the game when game start button is clicked
