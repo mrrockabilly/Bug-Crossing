@@ -146,10 +146,10 @@ var Engine = (function(global) {
 
         // when player hits an enemy the game is over and player returns to start position
         allEnemies.forEach(function(enemy) {
-            for (var i = enemy.x; i <= enemy.x+LEN_X; i++) {
-                if (i >= player.x+colSpace && i <= player.x+LEN_X-colSpace) {
-                    for (var j = enemy.y-LEN_Y; j <= enemy.y; j++) {
-                        if (j >= player.y-LEN_Y+colSpace && j <= player.y-colSpace) {
+            for (var i = enemy.x; i <= enemy.x+lengthX; i++) {
+                if (i >= player.x+colSpace && i <= player.x+lengthX-colSpace) {
+                    for (var j = enemy.y-lengthY; j <= enemy.y; j++) {
+                        if (j >= player.y-lengthY+colSpace && j <= player.y-colSpace) {
                             player.reset(0);
                             reset();
                         }
@@ -162,10 +162,10 @@ var Engine = (function(global) {
         // so player cannot move over obstacle
         canvasCollectibles.forEach(function(canvasCollectible){
             if (canvasCollectible.sprite == "images/Rock.png") {
-                for (var i = canvasCollectible.x; i <= canvasCollectible.x+LEN_X; i++) {
-                    if (i >= player.x+colSpace && i <= player.x+LEN_X-colSpace) {
-                        for (var j = canvasCollectible.y-LEN_Y; j <= canvasCollectible.y; j++) {
-                            if (j >= player.y-LEN_Y+colSpace && j <= player.y-colSpace) {
+                for (var i = canvasCollectible.x; i <= canvasCollectible.x+lengthX; i++) {
+                    if (i >= player.x+colSpace && i <= player.x+lengthX-colSpace) {
+                        for (var j = canvasCollectible.y-lengthY; j <= canvasCollectible.y; j++) {
+                            if (j >= player.y-lengthY+colSpace && j <= player.y-colSpace) {
                                 player.x = playerPrevXPos;
                                 player.y = playerPrevYPos;
                             }

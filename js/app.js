@@ -1,21 +1,20 @@
 // Globals to set the min and max coordinate values for moving Player and Enemies on the canvas
 
-var GAME_DURATION = 60000; // value in milliseconds = 60 secs
-var NUM_ENENIES = 4;
+const gameTimer = 60000; // value in milliseconds = 60 secs
+const bugs = 4;
+const lengthX = 101;
+const lengthY = 83;
 
-var LEN_X = 101;
-var LEN_Y = 83;
-
-var startingPositionX = 2 * LEN_X;
-var startingPositionY = 5 * LEN_Y;
+var startingPositionX = 2 * lengthX;
+var startingPositionY = 5 * lengthY;
 var PLAYER_MIN_X_POS = 0;
 var PLAYER_MIN_Y_POS = -40;
-var PLAYER_MAX_X_POS = 4 * LEN_X;
-var PLAYER_MAX_Y_POS = 5 * LEN_Y;
+var PLAYER_MAX_X_POS = 4 * lengthX;
+var PLAYER_MAX_Y_POS = 5 * lengthY;
 var playerPrevXPos;
 var playerPrevYPos;
 
-var ENEMY_MAX_X_POS = 5 * LEN_X; //505;
+var ENEMY_MAX_X_POS = 5 * lengthY; //505;
 
 // images and points
 var COLLECTIBLES = [
@@ -52,8 +51,8 @@ Enemy.prototype.update = function(dt) {
     // which will ensure the game runs at the same speed for
     // all computers.
     if (this.x > ENEMY_MAX_X_POS) {
-        this.x = -(Math.floor((Math.random() * 5) + 1) * LEN_X);
-        this.y = Math.floor((Math.random() * 3) + 1) * LEN_Y;
+        this.x = -(Math.floor((Math.random() * 5) + 1) * lengthX);
+        this.y = Math.floor((Math.random() * 3) + 1) * lengthY;
     } else {
         this.x = this.x + (this.speed * dt);
     }
@@ -157,25 +156,25 @@ Player.prototype.handleInput = function(key) {
 
     switch(key) {
         case 'left': // x cannot be smaller than 0
-            var leftPos = this.x - LEN_X;
+            var leftPos = this.x - lengthX;
             if (leftPos >= PLAYER_MIN_X_POS) {
                 this.x = leftPos;
             };
             break;
         case 'up': // y cannot be smaller than -40
-            var upPos = this.y - LEN_Y;
+            var upPos = this.y - lengthY;
             if (upPos >= PLAYER_MIN_Y_POS) {
                 this.y = upPos;
             };
             break;
         case 'right': // x cannot be bigger than 404
-            var rightPos = this.x + LEN_X;
+            var rightPos = this.x + lengthX;
             if (rightPos <= PLAYER_MAX_X_POS) {
                 this.x = rightPos;
             };
             break;
         case 'down': // y cannot be bigger than 415
-            var downPos = this.y + LEN_Y;
+            var downPos = this.y + lengthY;
             if (downPos <= PLAYER_MAX_Y_POS) {
                 this.y = downPos;
             };
@@ -205,9 +204,9 @@ var allEnemies;
 
 function placeEnemiesOnCanvas(){
     allEnemies = [];
-    for (var i=0; i < NUM_ENENIES; i++) {
-        var startX = -(Math.floor((Math.random() * 5) + 1) * LEN_X);
-        var startY = Math.floor((Math.random() * 3) + 1) * LEN_Y;
+    for (var i=0; i < bugs; i++) {
+        var startX = -(Math.floor((Math.random() * 5) + 1) * lengthX);
+        var startY = Math.floor((Math.random() * 3) + 1) * lengthY;
         allEnemies.push(new Enemy(startX,startY));
     }
 }
@@ -244,8 +243,8 @@ function placeCollectiblesOnCanvas(){
     // place the first collectible on the canvas and for all the others call 'checkPosition'
     // to place each collectible on its own tile
     for (var i=0; i < playCollectibleImgPoints.length; i++) {
-        xPos = Math.floor((Math.random() * 5) + 0) * LEN_X;
-        yPos = (Math.floor((Math.random() * 3) + 1) * LEN_Y)-COLLECTIBLE_Y_POS_ADJUST;
+        xPos = Math.floor((Math.random() * 5) + 0) * lengthX;
+        yPos = (Math.floor((Math.random() * 3) + 1) * lengthY)-COLLECTIBLE_Y_POS_ADJUST;
         if (positions.length != 0) {
             var position = checkPosition(positions,xPos,yPos);
             xPos = position[0];
@@ -261,8 +260,8 @@ function placeCollectiblesOnCanvas(){
     function checkPosition(positions,xPos,yPos) {
         for (var j=0; j < positions.length; j++) {
             if ( (xPos == positions[j][0]) && (yPos == positions[j][1]) ) {
-                xPos = Math.floor((Math.random() * 5) + 0) * LEN_X;
-                yPos = (Math.floor((Math.random() * 3) + 1) * LEN_Y)-COLLECTIBLE_Y_POS_ADJUST;
+                xPos = Math.floor((Math.random() * 5) + 0) * lengthX;
+                yPos = (Math.floor((Math.random() * 3) + 1) * lengthY)-COLLECTIBLE_Y_POS_ADJUST;
                 return checkPosition(positions,xPos,yPos);
             }
         }
@@ -361,7 +360,7 @@ function gameStart() {
     playSound();
     activateKeys(); // each game start => activate the keys
     placeEnemiesOnCanvas();
-    timer = GAME_DURATION / 1000;
+    timer = gameTimer / 1000;
     timerEl.innerHTML = timer;
     gameInterval = setInterval(function(){
         timer -= 1;
