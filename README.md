@@ -1,6 +1,10 @@
 #Bug Crossing
 A clone of the classic arcade game Frogger.
 
+<p>
+ <img src="./images/game-img.png" width="250"/>
+</p>
+
 ##Install and Start
 Clone the repository and open index.html.
 
